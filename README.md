@@ -1011,6 +1011,7 @@ brew install helm
 - Use AWS EKS/GCP GKE
 - Use Helm charts
 - Manage GPU workloads
+- Use PyTorch FSDP and DDP
 
 ## References
 
