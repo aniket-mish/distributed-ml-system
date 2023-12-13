@@ -1012,6 +1012,7 @@ brew install helm
 - Use Helm charts
 - Manage GPU workloads
 - Use PyTorch FSDP and DDP
+- Use terraform to create K8S cluster on EKS
 
 ## References
 
