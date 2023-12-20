@@ -26,6 +26,11 @@ The steps involved are:
 5. Serving
 6. End-to-end workflow
 
+## Distributed Training Basics
+
+- Vertical vs Horizontal Scaling
+- Data vs Model Parallelism
+
 ## Setup
 
 I'm using a Mac and Homebrew to install the tools. We will install Tensorflow, Docker, Kubectl, and k3d, a lightweight wrapper for k3s, which is lightweight Kubernetes.
