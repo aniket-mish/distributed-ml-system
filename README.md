@@ -30,6 +30,7 @@ The steps involved are:
 
 - Vertical vs Horizontal Scaling
 - Data vs Model Parallelism
+- Gradient Accumulation
 
 ## Setup
 
