@@ -1,4 +1,7 @@
-# Distributed Machine Learning Systems
+# Distributed Machine Learning
+
+## tech stack 
+`Kubernetes`, `Python`, `ArgoCD`, `Tensorflow`
 
 Recently, I was involved in a classification-based ML project where we developed a distributed scalable ML service. I wanted to build it again on a simple dataset to deepen my understanding.
 
