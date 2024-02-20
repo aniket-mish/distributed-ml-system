@@ -1009,17 +1009,15 @@ brew install helm
 4. We have used KServe for building an Inference Service which can be autoscaled based on the traffic.
 5. Argo workflows help build CICD pipelines on Kubernetes.
 
-## Next Steps
+## todos
 
-- ~~Create an Inference Logger~~ See [Logger](#Logger)
 - Monitoring the metrics with Prometheus and Grafana See [Monitoring](#Monitoring)
 - Setup MLFlow tracking server See [MLFlow Tracking Server](#MLFlow)
 - Try Seldon MLServer for serving [Seldon MLServer](#MLServer)
-- Use AWS EKS/GCP GKE
-- Use Helm charts
+- Use Helm charts?
 - Manage GPU workloads
-- Use PyTorch FSDP and DDP
-- Use terraform to create K8S cluster on EKS
+- Create a PyTorch version
+- Use terraform to create K8S cluster on EKS (cloud deployments?)
 
 ## References
 
