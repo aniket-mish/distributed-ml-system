@@ -1,10 +1,10 @@
 # Distributed Machine Learning on Kubernetes
- 
-I am using the following tech stack.
 
-`Kubernetes`, `Python`, `ArgoCD`, `Tensorflow`
+Building a distributed system is the hottest skill that any swe/mle should have. Every tech company that uses ML(LLMs) wants to *serve* their customers at scale and if you're GPU rich and don't want to waste the resources by keeping the GPUs idle, you need to *train* the models in parallel. 
 
-Recently, I was involved in a classification-based ML project where we developed a distributed scalable ML service. I wanted to build it again on a simple dataset to deepen my understanding.
+Recently, I was involved in a project where we developed a distributed scalable ML service which served hundreds of thousands of customers. TBH we faced a lot of challenges and building a distributed system is very tough. So i started working on this mini project to deepen my understanding of distributed ML and Kubernetes.
+
+I want to actively develop and maintain this repo furthur, add monitoring and use aws for deployments.
 
 
 ![Image](https://cdn.kastatic.org/ka-perseus-images/0db827a36e9287ee9c130cf17610faaed276b931.svg)
@@ -13,14 +13,16 @@ Recently, I was involved in a classification-based ML project where we developed
 ## Introduction
 
 ### What are distributed systems?
-Distributed systems are a group of nodes that talk to each other to achieve a specific task, such as streaming movies across devices, search engines, etc.
+
+Distributed systems are a group of nodes that talk to each other to achieve a specific task, such as streaming movies across devices, search engines, etc. 
 
 ### Why use distributed machine learning systems?
+
 I wonder how these complex models with millions or billions of parameters are trained and served. The trick is to use distributed systems. They allow developers to handle massive datasets across multiple clusters, use automation tools, and benefit from hardware accelerations.
 
-This repository includes code and references to implement a scalable and reliable machine learning system. I'm automating machine learning tasks with Kubernetes, Argo Workflows, Kubeflow, and TensorFlow. I aim to construct machine learning pipelines with data ingestion, distributed training, model serving, managing, and monitoring these workloads.
+This repository includes code and references to implement a scalable and reliable machine learning system. I'm automating machine learning tasks with kubernetes, argo workflows, kubeflow, and tensorflow. I aim to construct machine learning pipelines that do data ingestion, distributed training, model serving, managing, and monitoring these workloads.
 
-I'm building an image classification end-to-end machine learning system.
+In this project i'm building an image classification end-to-end machine learning system.
 
 The steps involved are:
 1. Setup
@@ -30,37 +32,34 @@ The steps involved are:
 5. Serving
 6. End-to-end workflow
 
-## Distributed Training Basics
-
-- Vertical vs Horizontal Scaling
-- Data vs Model Parallelism
-- Gradient Accumulation
-- PyTorch DDP
 
 ## Setup
 
-I'm using a Mac and Homebrew to install the tools. We will install Tensorflow, Docker, Kubectl, and k3d, a lightweight wrapper for k3s, which is lightweight Kubernetes.
+I'm using a macbook and homebrew to install the tools. If you're on linux/windows feel free to check the documentation of these tools for installation. We will install tensorflow, docker desktop, kubectl, and k3d.
 
-[1] We will be using [TensorFlow](https://www.tensorflow.org) for data processing, model building and evaluation.
+[1] We will be using [tensorflow](https://www.tensorflow.org) for data processing, model building and evaluation.
 
 ```bash
 pip install tensorflow
 ```
 
-[2] Docker to create single- or multi-node [k3s](https://k3s.io) clusters. Learn about docker [here](https://docker-curriculum.com/#setting-up-your-computer).
+[2] We need docker to create single- or multi-node clusters. You can learn about docker [here](https://docker-curriculum.com/#setting-up-your-computer). I have used docker desktop here.
 
-[3] Kubectl is a CLI tool for Kubernetes. I installed it using Brew.
+[3] Next, we install kubectl. It's a must have CLI tool for kubernetes.
 
 ```bash
 brew install kubectl
 ```
 
-[4] We will use Kubernetes as our core distributed infrastructure. We will use [k3d](https://k3d.io/v5.5.2/) which is a lightweight wrapper to run k3s (Rancher Lab’s minimal Kubernetes distribution) in docker. It's great for local Kubernetes development.
-
-Install k3d and create a cluster using k3d.
+[4] Next, to use kubernetes as our core distributed infrastructure, we will have to install [k3d](https://k3d.io/v5.5.2/) which is a lightweight wrapper to run k3s (Rancher Lab’s minimal kubernetes distribution) in docker. It's great for local kubernetes development. It's very lean and memory efficient. 
 
 ```bash
 wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.0.0 bash
+```
+
+Next, we can create a cluster.
+
+```bash
 k3d cluster create dist-ml --image rancher/k3s:v1.25.3-k3s1
 kubectl get nodes
 ```
@@ -68,23 +67,15 @@ kubectl get nodes
 ![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/30b17dcb-2632-4812-93cb-31b783c52b11)
 
 
-[5] [kubectx](https://github.com/ahmetb/kubectx/) and kubens to easily switch contexts and namespaces.
+[5] We also install [kubectx](https://github.com/ahmetb/kubectx/) and kubens to easily switch contexts and namespaces.
 
 ```bash
 brew install kubectx
 ```
 
-[6] We will use Kubeflow to submit jobs to the Kubernetes cluster. Install Kubeflow training operator to run distributed TensorFlow jobs on Kubernetes.
-
-
-![Kubeflow UI](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/aa731d8d-93cf-4089-a7a4-4a9b0f47e4eb "https://www.kubeflow.org/docs/started/architecture/")
-
-
-[7] We will also use Argo Workflows to construct and submit end-to-end machine learning workflows. Install Argo Workflows.
-
+[6] We will use kubeflow to submit jobs to the k8s cluster. To do this we install kubeflow training operator.
 
 ![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/24c1ef72-2d1d-4f95-9882-0a9dca981037)
-
 
 We start with creating a namespace. The namespaces provide a mechanism for isolating groups of resources within a single cluster. Read about the best practices to create and organize namespaces [here](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-organizing-with-namespaces).
 
@@ -116,9 +107,13 @@ kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/stand
 <img width="1273" alt="image" src="https://github.com/aniket-mish/distributed-ml-system/assets/71699313/022bca6c-c764-48a6-af4e-734a3465775f">
 
 
-## Some basics
+[7] We will install argo workflows to construct end-to-end machine learning workflows.
 
-For example, if you want to create a Kubernetes pod, you can just create a hello-world.yaml as below.
+## What are Pods?
+
+This a the most atomic part of kubernetes ecosystem.
+
+For example, if you want to create a kubernetes pod, you can just create a hello-world.yaml as below.
 
 ```yaml
 apiVersion: v1
@@ -139,7 +134,7 @@ Next, submit the job to our cluster.
 kubectl create -f hello-world.yaml
 ```
 
-We can see the statuses.
+We can see the status of the pod.
 
 ```bash
 kubectl get pods
@@ -159,9 +154,10 @@ kubectl get pod whalesay -o yaml
 
 You can get the JSON or any other format as well.
 
+
 ## System Architecture
 
-The system includes a Distributed training pipeline and an Inference service that can be autoscaled.
+The system includes a distributed model training pipeline and an inference service that can be autoscaled. This will be automated using argo. There are different design patterns that one can choose from and which fits their needs.
 
 
 <img width="1143" alt="Screenshot 2023-06-30 at 12 50 13 PM" src="https://github.com/aniket-mish/distributed-ml-system/assets/71699313/18bb1322-1970-4ef4-a3a6-f7d345623ee0">
@@ -181,7 +177,7 @@ Here, 60,000 images are used to train the network and 10,000 images are used to 
 
 The `tf.data` API enables you to build complex input pipelines from simple, reusable pieces. It's very efficient. It enables handling large amounts of data, reading from different data formats, and performing complex transformations.
 
-Load the fashion-mnist dataset into a `tf.data.Dataset` object and do some preprocessing. We normalize the image pixel values from the [0, 255] range to the [0, 1] range. We are keeping an in-memory cache to improve performance. We also shuffle the training data.
+Load the fashion-mnist dataset into a `tf.data.Dataset` object and do some preprocessing(casting to float32). Next, we normalize the image pixel values from the [0, 255] to the [0, 1] range. We are keeping an *in-memory cache* to improve performance. We also shuffle the training data.
 
 ```python
 import tensorflow_datasets as tfds
@@ -204,7 +200,7 @@ We have used the tensorflow_datasets module which contains a collection of datas
 
 We can consume our dataset in a distributed fashion as well and to do that we can use the same function we created before with some tweaks. When training a model with multiple GPUs, you can use the extra computing power effectively by increasing the batch size. In general, use the largest batch size that fits the GPU memory.
 
-There is a `MirroredStrategy()` for use on a single machine with multiple GPUs. However, if you wish to distribute training on multiple machines in a cluster, the `MultiWorkerMirroredStrategy()` is the way to go.
+There is a `MirroredStrategy()` for use on a single machine with multiple GPUs. However, if you wish to distribute training on multiple machines in a cluster(our goal), then `MultiWorkerMirroredStrategy()` strategy is the way to go.
 
 ```python
 strategy = tf.distribute.MultiWorkerMirroredStrategy()
@@ -212,15 +208,19 @@ BATCH_SIZE_PER_REPLICA = 64
 BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
 ```
 
-The `num_replicas_in_sync` equals the number of devices that are used in the [all-reduce]() operation. We have used the `tf.distribute.MultiWorkerMirroredStrategy` API and with the help of this strategy, a Keras model that was designed to run on a single worker can seamlessly work on multiple workers with minimal code changes.
+The `num_replicas_in_sync` equals the number of devices that are used in the [all-reduce]() operation. We have used the `tf.distribute.MultiWorkerMirroredStrategy` API and with the help of this strategy, a keras model that was designed to run on a single worker can seamlessly work on multiple workers with minimal code changes.
 
 What actually happens behind the scenes?
 1. Each GPU performs the forward pass on a different slice of the input data to compute the loss.
 2. Each GPU computes the gradients based on the loss function.
-3. These gradients are aggregated across all of the devices, via an All-reduce algorithm.
+3. These gradients are aggregated across all of the devices, via an all-reduce algorithm.
 4. The optimizer updates the weights using the reduced gradients thereby keeping the devices in sync.
 
+PyTorch users can look into the [DDP](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) and [FSDP](https://pytorch.org/docs/stable/fsdp.html) training approaches.
+
 We have also enabled automatic data sharding across workers by setting `tf.data.experimental.AutoShardPolicy` to `AutoShardPolicy.DATA`. This setting is needed to ensure convergence and performance. Sharding means handing each worker a subset of the entire dataset. You can read more about it [here](https://www.tensorflow.org/api_docs/python/tf/data/experimental/DistributeOptions).
+
+So the workflow is as below.
 
 ```python
 with strategy.scope():
@@ -237,7 +237,7 @@ model.fit(dataset, epochs=3, steps_per_epoch=70)
 
 ### Single node Model Training
 
-Now we have created a data ingestion component for distributed ingestion and have enabled the sharding as well.
+In the last step, we have created a distributed data ingestion component and have enabled data sharding as well.
 
 ```python
 def build_and_compile_cnn_model():
@@ -259,20 +259,21 @@ def build_and_compile_cnn_model():
     return model
 ```
 
-Next, we created a model and instantiated the optimizer. We are using accuracy to evaluate the model and sparse categorical cross entropy as the loss function.
+Next, we create a simple CNN model and instantiate the `Adam` optimizer. We are using accuracy to evaluate the model and sparse categorical cross entropy as the loss function(remember we have 10 categories to predict).
 
-Now we can train the model. We are also defining callbacks that will be executed during model training.
+We also define callbacks(necessary ones 😉) that will execute during model training.
 
-1. `tf.keras.callbacks.ModelCheckpoint` saves the model at a certain frequency, such as after every epoch
+1. `tf.keras.callbacks.ModelCheckpoint` saves the model at a certain frequency, for example, after every epoch.
 
 ```python
 checkpoint_dir = './training_checkpoints'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
 ```
-Here we are defining the checkpoint directory to store the checkpoints and the name of the checkpoint files.
 
-2. `tf.keras.callbacks.TensorBoard` writes a log for TensorBoard, which allows you to visualize the graphs
-3. `tf.keras.callbacks.LearningRateScheduler` schedules the learning rate to change after, for example, every epoch/batch
+We are defining the checkpoint directory to store the checkpoints and the name for the files. Checkpoints are important to restore the weights if the model training stops due to some issues.
+
+2. `tf.keras.callbacks.TensorBoard` writes a log for TensorBoard, which allows you to visualize the graphs.
+3. `tf.keras.callbacks.LearningRateScheduler` schedules the learning rate to change after, for example, every epoch/batch.
 
 ```python
 def decay(epoch):
@@ -284,7 +285,7 @@ def decay(epoch):
         return 1e-5
 ```
 
-4. PrintLR prints the learning rate at the end of each epoch
+4. PrintLR prints the learning rate at the end of each epoch.
 
 ```python
 class PrintLR(tf.keras.callbacks.Callback):
@@ -304,22 +305,23 @@ callbacks = [
 ]
 ```
 
-Next, we can train the model
+Next, we can train the model.
 
 ```python
 single_worker_model = build_and_compile_cnn_model()
 single_worker_model.fit(dataset, epochs=3, steps_per_epoch=70, callbacks=callbacks)
 ```
 
-After training, we get an accuracy of 94% on the training data.
+After training, we get an accuracy of 94%(meh) on the training data.
+
 
 ### Distributed Model Training
 
-Next, we can insert the distributed training logic so that we can train the model on multiple workers. We are using the MultiWorkerMirroredStrategy with Keras.
+Next, we can insert the distributed training logic so that we can train the model on multiple workers. We use the MultiWorkerMirroredStrategy with keras(tf as backend).
 
 In general, there are two common ways to do [distributed training with data parallelism](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras):
-1. Synchronous training, where the steps of training are synced across the workers and replicas. Here, all workers train over different slices of input data in sync, and aggregating gradients at each step.
-2. Asynchronous training, where the training steps are not strictly synced. Here, all workers are independently training over the input data and updating variables asynchronously. For instance, [parameter server training](https://www.tensorflow.org/tutorials/distribute/parameter_server_training).
+1. *Synchronous* training, where the steps of training are synced across the workers and replicas. Here, all workers train over different slices of input data in sync, and aggregating gradients at each step.
+2. *Asynchronous* training, where the training steps are not strictly synced. Here, all workers are independently training over the input data and updating variables asynchronously. For instance, [parameter server training](https://www.tensorflow.org/tutorials/distribute/parameter_server_training).
 
 We are using the MultiWorkerMirroredStrategy which implements synchronous distributed training across multiple workers, each with potentially multiple GPUs. It replicates all variables and computations to each local device and uses distributed collective implementation (e.g. all-reduce) so that multiple workers can work together.
 
@@ -327,13 +329,14 @@ Once we define our distributed training strategy, we initiate our distributed in
 
 ## Model saving and loading
 
-To save the model using `model.save`, the saving destinations need to be different for each worker.
+To save the model using `model.save`, the saving destinations(temporary dirs) need to be different for each worker.
 
-- For non-chief workers, save the model to a temporary directory
-- For the chief, save the model to the provided directory
+- For non-chief(slave) workers, save the model to a temporary directory
+- For the chief(master), save the model to the provided directory
 The temporary directories of the workers need to be unique to prevent errors. The model saved in all the directories is identical, and only the model saved by the chief should be referenced for restoring or serving.
 
-We will not save the model to temporary directories as it will waste our computing resources and memory. We will determine which worker is the chief and save its model only.
+We will not save the model to temporary directories as doing this will waste our computing resources and memory. We will determine which worker is the chief and save its model only.
+
 We can determine if the worker is the chief or not using the environment variable `TF_CONFIG`. Here's an example configuration:
 
 ```python
@@ -361,9 +364,9 @@ else:
 multi_worker_model.save(model_path)
 ```
 
-## Containerization
+## Containerization 📦
 
-We put everything we wrote till now into a Python script called `multi-worker-distributed-training.py`. Now we can dockerize it to train the model in the Kubernetes cluster.
+We put everything we wrote till now into a python script called `multi-worker-distributed-training.py`. Next, we dockerize the app.
 
 ```dockerfile
 FROM python:3.9
@@ -371,7 +374,7 @@ RUN pip install tensorflow==2.12.0 tensorflow_datasets==4.9.2
 COPY multi-worker-distributed-training.py /
 ```
 
-We then build the image from the dockerfile.
+We then build the docker image.
 
 ```bash
 docker build -f Dockerfile -t kubeflow/multi-worker-strategy:v0.1 .
@@ -391,11 +394,11 @@ k3d image import kubeflow/multi-worker-strategy:v0.1 --cluster dist-ml
 
 
 
-Now when the pods are completed/failed, all files in the pods are recycled by the Kubernetes garbage collection. So all the model checkpoints are lost and we don't have a model for serving. To avoid this we use PersistentVolume(PV) and PersistentVolumeClaim(PVC).
+When we train our model in the k8s pods, once they are completed/failed, all files in the pods are recycled by the kubernetes garbage collecter. So all the model checkpoints are lost and we don't have a model for serving. To avoid this we need to use PersistentVolume(PV) and PersistentVolumeClaim(PVC).
 
-A **_PersistentVolume (PV)_** is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned. It is a resource in the cluster just like a node is a cluster resource. PVs are volume plugins like Volumes but have a lifecycle independent of any individual Pod that uses the PV. This means that PV will persist and live even when the pods are deleted.
+A *_PersistentVolume (PV)_* is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned. It is a resource in the cluster just like a node is a cluster resource. PVs are volume plugins like Volumes but have a lifecycle independent of any individual Pod that uses the PV. This means that PV will persist and live even when the pods are deleted.
 
-A **_PersistentVolumeClaim (PVC)_** is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted ReadWriteOnce, ReadOnlyMany, or ReadWriteMany).
+A *_PersistentVolumeClaim (PVC)_* is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted ReadWriteOnce, ReadOnlyMany, or ReadWriteMany).
 
 We can create a PVC to submit a request for storage that will be used in worker pods to store the trained model. Here we are requesting 1GB storage with ReadWriteOnce mode.
 
@@ -418,7 +421,7 @@ Next, we create the PVC.
 kubectl create -f multi-worker-pvc.yaml
 ```
 
-Next, we will define a TFJob specification with the image we built before that contains the distributed training script.
+Next, we will define a TFJob(model training w/tf) specification with the image we built before that contains the distributed training script.
 
 ```yaml
 apiVersion: kubeflow.org/v1
@@ -451,7 +454,7 @@ spec:
                 claimName: strategy-volume
 ```
 
-We pass the arguments (`saved_model_dir`, `checkpoint_dir`) to the container. The `volumes` field specifies the persistent volume claim and `volumeMounts` field specifies what folder to mount the files. The `CleanPodPolicy` in the TFJob spec controls the deletion of pods when a job terminates. The `restartPolicy` determines whether pods will be restarted when they exit.
+We pass `saved_model_dir` and `checkpoint_dir` to the container. The `volumes` field specifies the persistent volume claim and `volumeMounts` field specifies what folder to mount the files. The `CleanPodPolicy` in the TFJob spec controls the deletion of pods when a job terminates. The `restartPolicy` determines whether pods will be restarted when they exit.
 
 Next, we submit this TFJob to our cluster and start our distributed model training.
 
@@ -463,7 +466,7 @@ kubectl create -f multi-worker-tfjob.yaml
 ![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/aafe0c12-6b1e-4755-b49a-932c3c0214ca)
 
 
-We can see 2 pods running our distributed training.
+We can see 2 pods running our distributed training(we specified 2 workers).
 1. multi-worker-training-worker-0
 2. multi-worker-training-worker-1
 
