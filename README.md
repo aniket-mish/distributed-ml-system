@@ -1,4 +1,4 @@
-# Distributed Machine Learning on Kubernetes
+![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/7e8a65eb-c249-4ce7-9f4f-dcaaa6077fed)# Distributed Machine Learning on Kubernetes
 
 Building a distributed system is the hottest skill that any swe/mle should have. Every tech company that uses ML(LLMs) wants to *serve* their customers at scale and if you're GPU rich and don't want to waste the resources by keeping the GPUs idle, you need to *train* the models in parallel. 
 
@@ -75,8 +75,6 @@ brew install kubectx
 
 [6] We will use kubeflow to submit jobs to the k8s cluster. To do this we install kubeflow training operator.
 
-![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/24c1ef72-2d1d-4f95-9882-0a9dca981037)
-
 We start with creating a namespace. The namespaces provide a mechanism for isolating groups of resources within a single cluster. Read about the best practices to create and organize namespaces [here](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-organizing-with-namespaces).
 
 To create a namespace and name it _kubeflow_.
@@ -107,13 +105,17 @@ kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/stand
 <img width="1273" alt="image" src="https://github.com/aniket-mish/distributed-ml-system/assets/71699313/022bca6c-c764-48a6-af4e-734a3465775f">
 
 
-[7] We will install argo workflows to construct end-to-end machine learning workflows.
+[7] We will install [argo workflows](https://argo-workflows.readthedocs.io/en/stable/) to construct end-to-end machine learning workflows.
+
+
+![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/afbac898-117f-4800-917d-00cf848fc502)
+
 
 ## What are Pods?
 
-This a the most atomic part of kubernetes ecosystem.
+This is the most atomic part of kubernetes ecosystem.
 
-For example, if you want to create a kubernetes pod, you can just create a hello-world.yaml as below.
+Let's create a simple kubernetes pod. You create a `hello-world.yaml` file as below.
 
 ```yaml
 apiVersion: v1
@@ -391,7 +393,6 @@ k3d image import kubeflow/multi-worker-strategy:v0.1 --cluster dist-ml
 
 
 ![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/9a6d843b-7cfd-451c-8c0a-ef08b8649326)
-
 
 
 When we train our model in the k8s pods, once they are completed/failed, all files in the pods are recycled by the kubernetes garbage collecter. So all the model checkpoints are lost and we don't have a model for serving. To avoid this we need to use PersistentVolume(PV) and PersistentVolumeClaim(PVC).
