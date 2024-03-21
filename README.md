@@ -999,15 +999,11 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 ## Monitoring
 
-I am setting up Prometheus and Grafana to monitor the Kubernetes cluster's resources. 
+🚧 WIP
 
-Prometheus stores data in a time series fashion and Grafana provides dashboards for the visualization.
+## MLFlow
 
-I am using helm charts here.
-
-```bash
-brew install helm
-```
+🚧 WIP
 
 ## Summary
 
@@ -1020,14 +1016,11 @@ brew install helm
 ## todos
 
 - Monitoring the metrics with Prometheus and Grafana See [Monitoring](#Monitoring)
-- Setup MLFlow tracking server See [MLFlow Tracking Server](#MLFlow)
-- Try Seldon MLServer for serving [Seldon MLServer](#MLServer)
-- Use Helm charts?
-- Manage GPU workloads
-- Create a PyTorch version
-- Use terraform to create K8S cluster on EKS (cloud deployments?)
+- Setup MLFlow tracking server See [MLFlow](#MLFlow)
+- Use Helm charts
+- Cloud deployments
 
-## References
+### Furthur reading and references
 
 [1] [Distributed Machine Learning Patterns by Yuan Tang](https://www.manning.com/books/distributed-machine-learning-patterns?utm_source=terrytangyuan&utm_medium=affiliate&utm_campaign=book_tang_distributed_6_10_21&a_aid=terrytangyuan&a_bid=9b134929)
 
