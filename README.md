@@ -1,4 +1,4 @@
-![image](https://github.com/aniket-mish/distributed-ml-system/assets/71699313/7e8a65eb-c249-4ce7-9f4f-dcaaa6077fed)# Distributed Machine Learning on Kubernetes
+# Distributed Machine Learning on Kubernetes
 
 Building a distributed system is the hottest skill that any swe/mle should have. Every tech company that uses ML(LLMs) wants to *serve* their customers at scale and if you're GPU rich and don't want to waste the resources by keeping the GPUs idle, you need to *train* the models in parallel. 
 
