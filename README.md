@@ -477,4 +477,117 @@ To see the evals, you can exec into a running container `predict-service`.
 
 Execute `predict-service.py` which takes the trained model and evaluates it on the `test` dataset.
 
+## Model selection
 
+We are training multiple models and we're going to pick the best one and use it for the inference.
+
+I've a deep neural network with batch norm layers.
+
+```python
+def build_and_compile_cnn_model_with_batch_norm():
+    print("Training CNN model with batch normalization")
+    model = models.Sequential()
+    model.add(layers.Input(shape=(28, 28, 1), name='image_bytes'))
+    model.add(layers.Conv2D(32, (3, 3), activation='relu'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Activation('sigmoid'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Activation('sigmoid'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(10, activation='softmax'))
+
+    model.summary()
+
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    return model
+```
+
+Let's create one more nn with dropout.
+
+```python
+def build_and_compile_cnn_model_with_dropout():
+    print("Training CNN model with dropout")
+    model = models.Sequential()
+    model.add(layers.Input(shape=(28, 28, 1), name='image_bytes'))
+    model.add(layers.Conv2D(32, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(10, activation='softmax'))
+
+    model.summary()
+
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    return model
+```
+
+Let's train these models by submitting three different `TFJob`s with arguments `--model_type` and `--saved_model_dir`.
+
+```bash
+kubectl apply -f tfjob.yaml
+```
+
+Next, we will evaluate the models performance. The model with the highest accuracy score can be moved to a different folder and then used for serving.
+
+```python
+best_model_path = ""
+best_accuracy = 0
+
+for i in range(3):
+
+    model_path = "trained_models/saved_model_versions/" + str(i)
+    model = tf.keras.models.load_model(model_path)
+
+    datasets, info = tfds.load(name='mnist', with_info=True, as_supervised=True)
+
+    test = datasets['test']
+
+    ds = mnist_test.map(scale).cache().shuffle(BUFFER_SIZE).batch(64)
+
+    loss, accuracy = model.evaluate(ds)
+
+    if accuracy > best_accuracy:
+      best_accuracy = accuracy
+      best_model_path = model_path
+
+dest = "trained_model/saved_model_versions/3"
+shutil.copytree(best_model_path, dest)
+```
+
+You can run the model-selection.py to see how this works.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: model-selection
+spec:
+  containers:
+  - name: predict
+    image: kubeflow/distributed-training-strategy:v0.1
+    command: ["python", "/model-selection.py"]
+    volumeMounts:
+    - name: model
+      mountPath: /trained_model
+  volumes:
+  - name: model
+    persistentVolumeClaim:
+      claimName: strategy-volume
+```
+
+#TODO
