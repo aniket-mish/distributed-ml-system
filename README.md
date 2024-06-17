@@ -46,13 +46,45 @@ brew install kubectl
 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
 ```
 
+Create a single-node cluster. You can create a multi-server cluster as well by specifying `--servers 3`.
+
+```bash
+k3d cluster create fmnist --image rancher/k3s:v1.27.12-k3s1
+```
+
+You can see the cluster info using command
+
+```bash
+kubectl cluster-info
+```
+
+Let's see which pods are created using
+
+```bash
+kubectl get nodes
+```
+
 [5] Install `kubectx` to easily switch between clusters and `kubens` for namespaces. This is a very handy utility.
 
 ```bash
 brew install kubectx
 ```
 
+Using kubens you can swtich between namespaces easily
+
+#TODO
+
 [6] Next, we install kubeflow training operator that allows us to train large models effectively.
+
+But first create a new namespace.
+
+```bash
+kubectl create namespace kubeflow
+
+kubens kubeflow
+```
+
+Now install the operator.
 
 ```bash
 kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/standalone?ref=v1.7.0"
@@ -64,3 +96,8 @@ kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/stand
 kubectl create namespace argo
 kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.5.7/install.yaml
 ```
+
+[8] For experiment tracking, install MLFlow.
+
+#TODO
+
