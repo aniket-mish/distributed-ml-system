@@ -261,4 +261,20 @@ model.fit(dataset, epochs=3, steps_per_epoch=70, callbacks=callbacks)
 I'm getting an accuracy of 94% on the training data. I'm not spending much time on increasing the accuracy as it's not our end goal.
 
 > [!NOTE]
-> I'm doing these experiments in a colab notebook
+> I'm doing these experiments in a colab notebook. Later I will copy this code to python scripts.
+
+### Create a distributed model training workflow
+
+We've already seen the strategy we need to use here. Just a recap - for distributed training on multiple workers, use the `MultiWorkerMirroredStrategy` with Keras(tf as backend).
+
+There are different ways to do distributed training and `data parallelism` is the most common one. There are two common ways to do [distributed training with data parallelism](https://www.Tensorflow.org/tutorials/distribute/multi_worker_with_keras):
+
+1. *Synchronous* training, where the steps of training are synced across the workers and replicas. all workers train over different slices of input data in sync, and aggregating gradients at each step.
+
+2. *Asynchronous* training, where the training steps are not strictly synced. all workers are independently training over the input data and updating variables asynchronously. see [parameter server training](https://www.Tensorflow.org/tutorials/distribute/parameter_server_training).
+
+I'm using the `MultiWorkerMirroredStrategy` that does synchronous distributed training across multiple workers, each with potentially multiple GPUs. It replicates all variables and computations to each local device and uses distributed collective implementation (e.g. all-reduce) so that multiple workers can work together.
+
+Let's initiate the distributed input data pipeline and the model inside the strategy scope but hold on we need to save these models somewhere so that they can then be fetched for inference.
+
+
