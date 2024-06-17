@@ -277,4 +277,43 @@ I'm using the `MultiWorkerMirroredStrategy` that does synchronous distributed tr
 
 Let's initiate the distributed input data pipeline and the model inside the strategy scope but hold on we need to save these models somewhere so that they can then be fetched for inference.
 
+## Model saving
 
+To save the model we can use `model.save` but since there are multiple models training parallely, the saving destinations need to be different for each worker.
+
+One approach is:
+- For worker nodes, save the model to a temporary directory
+- For the master node, save the model to the provided directory
+
+The temporary directories of the workers need to be unique to prevent errors. The model saved in the directories will be identical, and only the model saved by the master should be referenced for restoring or serving.
+
+I'm not saving the model to temporary directories as doing this will waste my laptop's computing resources and memory. I'm determining which worker node is the master and saving its model only.
+
+To determine if the worker node is the master or not, use the environment variable `TF_CONFIG`.
+
+An example configuration looks like below:
+```python
+tf_config = {
+    'cluster': {
+        'worker': ['localhost:12345', 'localhost:23456']
+    },
+    'task': {'type': 'worker', 'index': 0}
+}
+```
+
+The `_is_worker_master` function inspects the cluster specs and current task type and returns `True` if the worker is the master and `False` otherwise.
+
+```python
+def _is_worker_master():
+    return TASK_INDEX == 0
+
+tf_config = json.loads(os.environ.get('TF_CONFIG') or '{}')
+TASK_INDEX = tf_config['task']['index']
+
+if _is_worker_master():
+    model_path = args.saved_model_dir
+else:
+    model_path = args.saved_model_dir + '/worker_tmp_' + str(TASK_INDEX)
+
+multi_worker_model.save(model_path)
+```
