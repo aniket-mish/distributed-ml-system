@@ -183,3 +183,82 @@ with strategy.scope():
 
 model.fit(dataset, epochs=5, steps_per_epoch=70)
 ```
+
+## Create a simple neural net
+
+A simple neural net with `Adam` optimizer and `SparseCategoricalCrossentropy` loss as we have 10 categories to predict from.
+
+```python
+def build_and_compile_cnn_model():
+    print("Training a simple neural net")
+
+    model = tf.keras.Sequential([
+      tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(128, activation='relu'),
+      tf.keras.layers.Dense(10)
+    ])
+
+    model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+    return model
+```
+
+Let's define some necessary callbacks that will be executed during model training.
+
+1. Checkpointing saves model weights at some frequency(use `save_freq`). We use `tf.keras.callbacks.ModelCheckpoint` for checkpointing.
+
+```python
+checkpoint_dir = './training_checkpoints'
+checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
+```
+
+I define the checkpoint directory to store the checkpoints and the names of the files. Checkpoints are important to restore the weights if the model training stops due to some issues.
+
+2. `tf.keras.callbacks.TensorBoard` writes a log for TensorBoard, which allows you to visualize the graphs.
+   
+3. `tf.keras.callbacks.LearningRateScheduler` schedules the learning rate to change after, for example, every epoch/batch.
+
+```python
+def decay(epoch):
+    if epoch < 3:
+        return 1e-3
+    elif epoch >= 3 and epoch < 7:
+        return 1e-4
+    else:
+        return 1e-5
+```
+
+4. PrintLR prints the learning rate at the end of each epoch.
+
+```python
+class PrintLR(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        print('\nLearning rate for epoch {} is {}'.format(        epoch + 1, model.optimizer.lr.numpy()))
+```
+
+Now put all the components together.
+
+```python
+callbacks = [
+    tf.keras.callbacks.TensorBoard(log_dir='./logs'),
+    tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_prefix, save_weights_only=True),
+    tf.keras.callbacks.LearningRateScheduler(decay),
+    PrintLR()
+]
+```
+
+Now every piece is in it's correct place.
+
+Next, we train the model.
+
+```python
+model = build_and_compile_cnn_model()
+model.fit(dataset, epochs=3, steps_per_epoch=70, callbacks=callbacks)
+```
+
+I'm getting an accuracy of 94% on the training data. I'm not spending much time on increasing the accuracy as it's not our end goal.
+
+> [!NOTE]
+> I'm doing these experiments in a colab notebook
