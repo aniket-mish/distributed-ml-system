@@ -107,5 +107,79 @@ There are multiple design patterns which can be used to create a ML system. In t
 
 <img width="1075" alt="Screenshot 2024-06-17 at 3 28 42 PM" src="https://github.com/aniket-mish/distributed-ml-system/assets/71699313/635143bb-0952-4578-99cd-6d40d1172a33">
 
+## Data Ingestion
 
+I'm using the fashion mnist dataset that has 70,000 images(60,000 for training and 10,000 for evaluation). It has 10 different catergories and each image has a low resolution of 28x28 px.
 
+#TODO
+
+### Create a simple pipeline
+
+The `tf.data` API enables you to build complex input pipelines from simple, reusable pieces. It's very efficient and enables handling large amounts of data, reading from different data formats, and performing complex transformations.
+
+I'm loading the dataset into a `tf.data.Dataset` object and cast the images to float32. Next, I'm normalizing the image pixel values from the [0, 255] to the [0, 1] range. These are some standard practices. I'm keeping an *in-memory cache* to improve performance. Let's also shuffle the training data to add some randomness.
+
+```python
+import Tensorflow_datasets as tfds
+import Tensorflow as tf
+
+def get_dataset():
+    BUFFER_SIZE = 10000
+    def scale(image, label):
+        image = tf.cast(image, tf.float32)
+        image /= 255
+        return image, label
+    datasets, info = tfds.load(name='mnist', with_info=True, as_supervised=True)
+    train = datasets['train']
+    return train.map(scale).cache().shuffle(BUFFER_SIZE)
+```
+
+I'm using Tensorflow datasets module to load the dataset. The above piece of code gives a shuffled dataset where each element consists of images and labels.
+
+### Create a distributed data pipeline
+
+To consume a large dataset(>PBs), we need to use a distributed approach. We can do that with some tweaks to the same function that we created. 
+
+For distributed data ingestion, just increase the batch size to use the extra computing power effectively, 
+
+> [!TIP]
+> Use the largest batch size that fits the GPU memory
+
+There are several strategies in-built into Tensorflow library. There is a `MirroredStrategy()` that can be used to train on a single machine with multiple GPUs but if you want to distribute training on multiple machines in a cluster/s(recommended and my goal), then `MultiWorkerMirroredStrategy()` strategy is a way to go.
+
+```python
+strategy = tf.distribute.MultiWorkerMirroredStrategy()
+
+BATCH_SIZE_PER_REPLICA = 64
+BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
+```
+
+The `num_replicas_in_sync` equals the number of devices that are used in the **all-reduce** operation. Use the `tf.distribute.MultiWorkerMirroredStrategy` API and with the help of this strategy, a keras model that was designed to run on a single worker can seamlessly work on multiple workers with minimal code changes.
+
+#### What happens actually under the hood when this strategy is used?
+
+1. Each GPU performs the forward pass on a different slice of the input data and computes the loss
+
+2. Next each GPU compute the gradients based on the loss
+
+3. These gradients are then aggregated across all of the devices(using an all-reduce algorithm)
+
+4. The optimizer updates the weights using the reduced gradients thereby keeping the devices in sync
+
+> [!NOTE]
+> PyTorch has [DDP](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) and [FSDP](https://pytorch.org/docs/stable/fsdp.html)(more popular and useful)
+
+I'm enabling automatic data sharding across workers by setting `tf.data.experimental.AutoShardPolicy` to `AutoShardPolicy.DATA`. This setting is needed to ensure convergence and performance. The concept of [sharding](https://www.Tensorflow.org/api_docs/python/tf/data/experimental/DistributeOptions) means handing each worker a subset of the entire dataset.
+
+Now the final training workflow can be written below
+
+```python
+with strategy.scope():
+    dataset = get_dataset().batch(BATCH_SIZE).repeat()
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
+    dataset = dataset.with_options(options)
+    model = build_and_compile_cnn_model()
+
+model.fit(dataset, epochs=5, steps_per_epoch=70)
+```
