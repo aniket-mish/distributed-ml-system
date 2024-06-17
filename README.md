@@ -318,6 +318,8 @@ else:
 multi_worker_model.save(model_path)
 ```
 
+#TODO
+
 ## Containerization
 
 To containerize I have a Python script called `distributed-training.py` that has all the three models.
@@ -330,6 +332,8 @@ RUN pip install Tensorflow Tensorflow_datasets
 COPY multi-worker-distributed-training.py /
 ```
 
+#TODO
+
 Next, build the docker image
 
 ```bash
@@ -341,3 +345,136 @@ We need to import the image to the k3d cluster as it cannot access the image reg
 ```bash
 k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster fmnist
 ```
+
+#TODO
+
+## Persistent volume
+
+When training a model in respective pods, if the operations/computations are completed/failed, the files in the pod are recycled/deleted by the garbage collector. This means that all the model checkpoints are lost, that means now we don't have a model for serving.
+
+To avoid this we have to use `PersistentVolume` and `PersistentVolumeClaim`.
+
+A *_PersistentVolume(PV)_* is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned. It is a resource in the cluster just like a node is a cluster resource. PVs are volume plugins like volumes but have a lifecycle independent of any individual Pod that uses the PV, that means the storage will persist and live even when the pods are deleted.
+
+A *_PersistentVolumeClaim (PVC)_* is a request for storage by a user. Pods consume node resources and PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted ReadWriteOnce, ReadOnlyMany, or ReadWriteMany).
+
+Next, create a PVC to submit a request for storage that will be used in worker pods to store the trained model. I'm requesting 1GB of storage with `ReadWriteOnce` mode.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strategy-volume
+spec:
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+```bash
+kubectl create -f pvc.yaml
+```
+
+## TFJob
+
+
+Next, define a TFJob spec which helps distributed model training.
+
+> [!NOTE]
+> There's a concept of deployments and the main difference between deployments and jobs is how they handle a pod that is terminated. a deployment is intended to be a "service",
+> e.g. it should be up and running, so it will try to restart the pods it's managing, to match the desired number of replicas. while a job is intended to execute and successfully
+> terminate.
+
+```yaml
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: training
+spec:
+  runPolicy:
+    cleanPodPolicy: None
+  tfReplicaSpecs:
+    Worker:
+      replicas: 2
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: Tensorflow
+              image: kubeflow/ditributed-training-strategy:v0.1
+              imagePullPolicy: IfNotPresent
+              command: ["python", "/distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/2/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
+              volumeMounts:
+                - mountPath: /trained_model
+                  name: training
+              resources:
+                limits:
+                  cpu: 500m
+          volumes:
+            - name: training
+              persistentVolumeClaim:
+                claimName: strategy-volume
+```
+
+You can pass `saved_model_dir` and `checkpoint_dir` to the container. 
+
+The `volumes` field specifies the persistent volume claim and `volumeMounts` field specifies what folder to mount the files. The `CleanPodPolicy` in the TFJob spec controls the deletion of pods when a job terminates. The `restartPolicy` determines whether pods will be restarted when they exit.
+
+Submit the TFJob to our cluster and start our distributed model training.
+
+```bash
+kubectl create -f tfjob.yaml
+```
+
+#TODO
+
+We can see two pods running our distributed training as we've specified `2` workers.
+
+1. training-worker-0
+2. training-worker-1
+
+Let's see the logs from the pod `training-worker-0`
+
+```bash
+kubectl logs training-worker-0
+```
+
+#TODO
+
+
+While training the models, we're storing it in the `/saved_model_versions/1/` path. 
+
+> [!NOTE]
+> We can edit/update the code and resubmit the job. Just delete the running job, rebuild the docker image, import it, and resubmit the job. These are the steps to remember every
+> time we change the code.
+
+```bash
+kubectl delete tfjob --all
+docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
+k3d image import kubeflow/ditributed-training-strategy:v0.1 --cluster fmnist
+kubectl create -f tfjob.yaml
+```
+
+Voila! We've already trained the models.
+
+Next, we can evaluate the model's performance.
+
+```bash
+kubectl create -f predict-service.yaml
+```
+
+We finally have a trained model stored in the file path `trained_model/saved_model_versions/2/`.
+
+```bash
+kubectl exec --stdin --tty predict-service -- bin/bash
+```
+
+To see the evals, you can exec into a running container `predict-service`.
+
+#TODO
+
+Execute `predict-service.py` which takes the trained model and evaluates it on the `test` dataset.
+
+
