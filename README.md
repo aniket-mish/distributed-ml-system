@@ -317,3 +317,27 @@ else:
 
 multi_worker_model.save(model_path)
 ```
+
+## Containerization
+
+To containerize I have a Python script called `distributed-training.py` that has all the three models.
+
+Let's create a `Dockerfile`
+
+```dockerfile
+FROM python:3.9
+RUN pip install Tensorflow Tensorflow_datasets
+COPY multi-worker-distributed-training.py /
+```
+
+Next, build the docker image
+
+```bash
+docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
+```
+
+We need to import the image to the k3d cluster as it cannot access the image registry.
+
+```bash
+k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster fmnist
+```
