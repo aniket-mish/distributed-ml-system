@@ -1,2 +1,2 @@
-tensorflow==2.13
-tensorflow_datasets==4.9.2
+torch
+torchvision
