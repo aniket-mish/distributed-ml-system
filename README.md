@@ -1013,6 +1013,9 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 ## Next Steps
 
+- Change dataset used to CIFAR10
+- Update tf code to torch
+- Add mlflow to track experiments
 - Monitoring the metrics with Prometheus and Grafana See [Monitoring](#Monitoring)
 
 
