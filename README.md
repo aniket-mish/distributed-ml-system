@@ -356,7 +356,6 @@ else:
 multi_worker_model.save(model_path)
 ```
 
-#TODO
 
 ## Containerization
 
@@ -370,21 +369,23 @@ RUN pip install Tensorflow Tensorflow_datasets
 COPY distributed-training.py /
 ```
 
-#TODO
-
 Next, build the docker image
 
 ```bash
 docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
 ```
 
+![docker-build](assets/docker-build.png)
+
+
 I need to import the image to the k3d cluster as it cannot access the image registry.
 
 ```bash
-k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster fmnist
+k3d image import docker.io/kubeflow/ditributed-training-strategy:v0.1 --cluster dist-ml
 ```
 
-#TODO
+![k3d-image-import](assets/k3d-image-import.png)
+
 
 ## Persistent volume
 
@@ -412,11 +413,10 @@ spec:
 ```
 
 ```bash
-kubectl create -f pvc.yaml
+kubectl apply -f pvc.yaml
 ```
 
 ## TFJob
-
 
 Next, define a TFJob spec which helps distributed model training.
 
@@ -465,8 +465,6 @@ Submit the TFJob to our cluster and start our distributed model training.
 ```bash
 kubectl create -f tfjob.yaml
 ```
-
-#TODO
 
 I can see two pods running our distributed training as we've specified `2` workers.
 

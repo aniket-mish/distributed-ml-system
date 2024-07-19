@@ -1,6 +1,6 @@
-FROM python:3.9
+FROM python:3.10.12-slim-buster
 
-RUN pip install tensorflow tensorflow_datasets
+RUN pip install torch torchvision
 
 COPY data-ingestion.py /
 COPY distributed-training.py /

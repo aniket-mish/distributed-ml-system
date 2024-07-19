@@ -1,21 +1,26 @@
-import tensorflow_datasets as tfds
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+from torch.utils.data import DataLoader
 
 
 def get_dataset():
     """
     Get the data
     """
-    BUFFER_SIZE = 10000
+    training_data = datasets.CIFAR10(
+        root="data", train=True, download=True, transform=ToTensor()
+    )
 
-    # Scale the mnist data from [0, 255] range to [0, 1] range
-    def scale(image, label):
-        image = tf.cast(image, tf.float32)
-        image /= 255
-        return image, label
+    test_data = datasets.CIFAR10(
+        root="data", train=False, download=True, transform=ToTensor()
+    )
 
-    # Use Fashion-MNIST: https://www.tensorflow.org/datasets/catalog/fashion_mnist
-    datasets, info = tfds.load(name="fashion_mnist", with_info=True, as_supervised=True)
+    print(f"We have {len(training_data)} examples in the train set")
+    print(f"We have {len(test_data)} examples in the test set")
 
-    train = datasets["train"]
+    class_names = training_data.classes
 
-    return train.map(scale).cache().shuffle(BUFFER_SIZE)
+    train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
+    test_dataloader = DataLoader(test_data, batch_size=64, shuffle=True)
+
+    return train_dataloader, test_dataloader, class_names
