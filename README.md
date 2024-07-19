@@ -732,3 +732,198 @@ print(response.text)
 #TODO
 
 Our inference service is working as expected.
+
+
+## Replicated model servers inference
+
+Next, I want to have multiple model servers to handle large amounts of traffic. KServe can autoscale based on the requests. The autoscaler can scale down to zero if the application is receiving no traffic or we can specify a minimum number of replicas that need to be there. The `autoscaling.knative.dev/target` sets a soft limit. Other specs that can be configured like `minReplicas`, `containerConcurrency`, and `scaleMetric`, etc.
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: InferenceService
+metadata:
+  name: tf-mnist
+  annotations:
+    autoscaling.knative.dev/target: "1"
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: tensorflow
+      storageUri: "pvc://strategy-volume/saved_model_versions"
+```
+
+Next, I install [Hey](https://github.com/rakyll/hey), a tiny program that sends some load to a web application. Hey runs provided a number of requests in the provided concurrency level and prints stats.
+
+```bash
+# https://github.com/rakyll/hey
+brew install hey
+kubectl create -f inference-service.yaml
+
+hey -z 30s -c 5 -m POST -host ${SERVICE_HOSTNAME} -D mnist-input.json "http://${INGRESS_HOST}:${INGRESS_PORT}/v1/models/tf-mnist:predict"
+```
+
+#TODO
+
+I'm sending traffic for 30 seconds with 5 concurrent requests. As the scaling target is set to 1 and we load the service with 5 concurrent requests, the autoscaler tries scaling up to 5 pods. There will be a cold start time initially to spawn pods. It may take longer (to pull the docker image) if is not cached on the node.
+
+
+## End-to-end Workflow
+
+It's time to connect all the parts. I'm using argo workflow to orchestrate the jobs we executed before in an end-to-end fashion. We can build a CICD workflow using DAG (exactly similar to GitLab CICD) on Kubernetes. Argo is the defacto engine for orchestration on Kubernetes.
+
+We will start by installing argo workflows in a different namespace.
+
+```bash
+kubectl create namespace argo
+kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.4.11/install.yaml
+```
+
+I'm creating an end-to-end workflow with 4 steps:
+1. Data Ingestion
+2. Distributed Training
+3. Model Selection
+4. Model Serving
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: tfjob-wf-    # name of the workflow spec
+spec:
+  entrypoint: tfjob-wf          # invoke the tfjob template
+  templates:
+  - name: tfjob-wf
+    steps:
+    - - name: data-ingestion-step
+        template: data-ingestion-step
+    - - name: distributed-tf-training-steps
+        template: distributed-tf-training-steps
+    - - name: model-selection-step
+        template: model-selection-step
+    - - name: create-model-serving-service
+        template: create-model-serving-service
+podGC:
+  strategy: OnPodSuccess
+volumes:
+- name: model
+  persistentVolumeClaim:
+    claimName: strategy-volume
+```
+
+This is a multi-step workflow where all the steps are executed sequentially(double dash). `PodGC` describes how to delete completed pods. Deleting completed pods can free the resources. I'm also using persistent storage to store the dataset and the trained models.
+
+The first step is the data ingestion. We have added a `memoize` spec to cache the output of this step. Memoization reduces cost and execution time. Since we do not want to download the data every time, we can cache it using the configMap. We have to specify the `key` and name for the `config-map` cache. I have also specified `maxAge` to `1h`, which defines how long should the cache be considered valid.
+
+```yaml
+- name: data-ingestion-step
+  serviceAccountName: argo
+  memoize:
+  cache:
+    configMap:
+      name: data-ingestion-config
+      key: "data-ingestion-cache"
+    maxAge: "1h"
+  container:
+    image: kubeflow/multi-worker-strategy:v0.1
+    imagePullPolicy: IfNotPresent
+    command: ["python", "/data-ingestion.py"]
+```
+
+Next, we execute the model training steps in parallel.
+
+
+```yaml
+- name: distributed-training-step
+  steps:
+  - - name: cnn-model
+      template: cnn-model
+    - name: cnn-model-with-dropout
+      template: cnn-model-with-dropout
+    - name: cnn-model-with-batch-norm
+      template: cnn-model-with-batch-norm
+```
+
+Next, we create a step to run distributed training with the CNN model. To create the TFJob, we include the manifest we created before. We also add the `successCondition` and `failureCondition` to indicate if the job is created. Here we are storing the trained model in a different folder. We create similar steps for the other two models.
+
+
+```yaml
+- name: cnn-model
+  serviceAccountName: training-operator
+  resource:
+    action: create
+    setOwnerReference: true
+    successCondition: status.replicaStatuses.Worker.succeeded = 2
+    failureCondition: status.replicaStatuses.Worker.failed > 0
+  manifests: |
+    apiVersion: kubeflow.org/v1
+    kind: TFJob
+    metadata:
+      generateName: multi-worker-training-
+    spec:
+      runPolicy:
+        cleanPodPolicy: None
+      tfReplicaSpecs:
+        Worker:
+          replicas: 2
+          restartPolicy: Never
+          template:
+            spec:
+              containers:
+                - name: tensorflow
+                  image: kubeflow/multi-worker-strategy:v0.1
+                  imagePullPolicy: IfNotPresent
+                  command: ["python", "/multi-worker-distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/1/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
+                  volumeMounts:
+                    - mountPath: /trained_model
+                      name: training
+                  resources:
+                    limits:
+                      cpu: 500m
+              volumes:
+                - name: training
+                  persistentVolumeClaim:
+                    claimName: strategy-volume
+```
+
+Next, we add the model selection step. It is similar to `model-selection.yaml` we created earlier.
+
+```yaml
+- name: model-selection-step
+  serviceAccountName: argo
+  container:
+    image: kubeflow/multi-worker-strategy:v0.1
+    imagePullPolicy: IfNotPresent
+    command: ["python", "/model-selection.py"]
+    volumeMounts:
+    - name: model
+      mountPath: /trained_model
+```
+
+The last step of the workflow is the model serving.
+
+```yaml
+- name: create-model-serving-service
+  serviceAccountName: training-operator
+  successCondition: status.modelStatus.states.transitionStatus = UpToDate
+  resource:
+    action: create
+    setOwnerReference: true
+    manifest: |
+      apiVersion: "serving.kserve.io/v1beta1"
+      kind: InferenceService
+      metadata:
+        name: tf-mnist
+      spec:
+        predictor:
+          model:
+            modelFormat:
+              name: tensorflow
+            storageUri: "pvc://strategy-volume/saved_model_versions"
+```
+
+Next, run the workflow.
+
+```bash
+kubectl create -f workflow.yaml
+```
