@@ -74,7 +74,7 @@ conda install pytorch::pytorch torchvision -c pytorch
 brew install kubectl
 ```
 
-[4] To use Kubernetes on the local machine, install [k3d](https://k3d.io/v5.5.2/), a lightweight wrapper to run K8s. There's minikube, kind and other distributions as well but I find k3d lean, memory efficient and simpler.
+[4] To use Kubernetes on the local machine, install k3d, a lightweight wrapper to run k8s. There's minikube, kind and other distributions as well but I find k3d lean, memory efficient and simpler.
 
 ```bash
 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
@@ -83,7 +83,7 @@ wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bas
 Create a single-node cluster. You can create a multi-server cluster as well by specifying `--servers 3`.
 
 ```bash
-k3d cluster create fmnist --image rancher/k3s:v1.27.12-k3s1
+k3d cluster create dist-ml
 ```
 
 You can see the cluster info using command
