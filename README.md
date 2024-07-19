@@ -2,7 +2,7 @@
 
 Building a distributed ML system in this modern era of deep learning is a necessity. Every company that uses ML wants to serve their customers at scale. Models are becoming huge and the datasets required to train these models are increasing as well. See [chinchilla scaling laws](https://arxiv.org/abs/2203.15556). On top of that GPUs are expensive. So keeping these GPUs idle can cost you a lot. Using multi-GPU training and optimizing inference can save costs and make user experience good.
 
-I am working on this project to get deeper understanding of distributed ML systems, use kubernetes, tensorflow and argo workflows.
+I'm working on this project to get deeper understanding of distributed ML systems, use kubernetes, tensorflow and argo workflows.
 
 ## Background
 
@@ -251,7 +251,7 @@ callbacks = [
 
 Now every piece is in it's correct place.
 
-Next, we train the model.
+Next, train the model.
 
 ```python
 model = build_and_compile_cnn_model()
@@ -265,7 +265,7 @@ I'm getting an accuracy of 94% on the training data. I'm not spending much time 
 
 ### Create a distributed model training workflow
 
-We've already seen the strategy we need to use here. Just a recap - for distributed training on multiple workers, use the `MultiWorkerMirroredStrategy` with Keras(tf as backend).
+I've already discussed about the strategy to use here. Just a recap - for distributed training on multiple workers, use the `MultiWorkerMirroredStrategy` with Keras(tf as backend).
 
 There are different ways to do distributed training and `data parallelism` is the most common one. There are two common ways to do [distributed training with data parallelism](https://www.Tensorflow.org/tutorials/distribute/multi_worker_with_keras):
 
@@ -340,7 +340,7 @@ Next, build the docker image
 docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
 ```
 
-We need to import the image to the k3d cluster as it cannot access the image registry.
+I need to import the image to the k3d cluster as it cannot access the image registry.
 
 ```bash
 k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster fmnist
@@ -430,7 +430,7 @@ kubectl create -f tfjob.yaml
 
 #TODO
 
-We can see two pods running our distributed training as we've specified `2` workers.
+I can see two pods running our distributed training as we've specified `2` workers.
 
 1. training-worker-0
 2. training-worker-1
@@ -444,7 +444,7 @@ kubectl logs training-worker-0
 #TODO
 
 
-While training the models, we're storing it in the `/saved_model_versions/1/` path. 
+While training the model, I'm storing it in the `/saved_model_versions/1/` path. 
 
 > [!NOTE]
 > We can edit/update the code and resubmit the job. Just delete the running job, rebuild the docker image, import it, and resubmit the job. These are the steps to remember every
@@ -457,15 +457,15 @@ k3d image import kubeflow/ditributed-training-strategy:v0.1 --cluster fmnist
 kubectl create -f tfjob.yaml
 ```
 
-Voila! We've already trained the models.
+Voila! model training's done.
 
-Next, we can evaluate the model's performance.
+Next, evaluate the model's performance.
 
 ```bash
 kubectl create -f predict-service.yaml
 ```
 
-We finally have a trained model stored in the file path `trained_model/saved_model_versions/2/`.
+Finally, I have a trained model stored in the file path `trained_model/saved_model_versions/2/`.
 
 ```bash
 kubectl exec --stdin --tty predict-service -- bin/bash
@@ -479,7 +479,7 @@ Execute `predict-service.py` which takes the trained model and evaluates it on t
 
 ## Model selection
 
-We are training multiple models and we're going to pick the best one and use it for the inference.
+I'm training multiple models and let's pick the best one and use it for the inference.
 
 I've a deep neural network with batch norm layers.
 
@@ -542,7 +542,7 @@ Let's train these models by submitting three different `TFJob`s with arguments `
 kubectl apply -f tfjob.yaml
 ```
 
-Next, we will evaluate the models performance. The model with the highest accuracy score can be moved to a different folder and then used for serving.
+Next, evaluate all the models performance. The model with the highest accuracy score can be moved to a different folder and then used for serving.
 
 ```python
 best_model_path = ""
@@ -569,7 +569,7 @@ dest = "trained_model/saved_model_versions/3"
 shutil.copytree(best_model_path, dest)
 ```
 
-You can run the model-selection.py to see how this works.
+You can run the model-selection.py.
 
 ```yaml
 apiVersion: v1
@@ -591,3 +591,36 @@ spec:
 ```
 
 #TODO
+
+## Inference
+
+I've implemented distributed training and model selection components. Next I'm creating a model serving component. This component takes the trained model from `trained_model/saved_model_versions/3`. 
+
+The inference service should be very highly performant and robust. I'm not considering cost at this moment.
+
+### Create a single server model inference service
+
+```python
+model_path = "trained_models/saved_model_versions/3"
+model = tf.keras.models.load_model(model_path)
+datasets, info = tfds.load(name='mnist', with_info=True, as_supervised=True)
+mnist_test = datasets['test']
+ds = mnist_test.map(scale).cache().shuffle(BUFFER_SIZE).batch(64)
+loss, accuracy = model.predict(ds)
+```
+
+I'm using `TFServing` to expose the model as an endpoint service.
+
+```bash
+# Environment variable with the path to the model
+os.environ["MODEL_PATH"] = f"{model_path}"
+
+nohup Tensorflow_model_server \
+  --port=8500 \
+  --rest_api_port=8501 \
+  --model_name=model \
+  --model_base_path=$MODEL_PATH
+```
+
+_Nohup, short for no hang-up is a command in Linux systems that keeps processes running even after exiting the shell or terminal._
+
