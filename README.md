@@ -141,7 +141,7 @@ helm install dist-mlflow community-charts/mlflow
 
 ## System Architecture
 
-There are multiple design patterns which can be used to create a ML system. In this project, I'm sticking to the easiest one. It has a data ingestion component. Once data is available you can schedule the pipeline to download the data and store it somewhere(e.g. s3). We then train multiple models on the same dataset parallely. Once the models are available, we can pick the best model and create a scalable inference service. 
+There are multiple design patterns which can be used to create a ML system. In this project, I'm sticking to the easiest one. It has a data ingestion component. Once data is available you can schedule the pipeline to download the data and store it somewhere(e.g. s3). We then train multiple models on the same dataset parallely. Once the models are available, we can pick the best model and create a scalable inference service.
 
 <img width="1075" alt="Screenshot 2024-06-17 at 3 28 42 PM" src="https://github.com/aniket-mish/distributed-ml-system/assets/71699313/635143bb-0952-4578-99cd-6d40d1172a33">
 
@@ -176,9 +176,9 @@ I'm using Tensorflow datasets module to load the dataset. The above piece of cod
 
 ### Create a distributed data pipeline
 
-To consume a large dataset(>PBs), we need to use a distributed approach. We can do that with some tweaks to the same function that we created. 
+To consume a large dataset(>PBs), we need to use a distributed approach. We can do that with some tweaks to the same function that we created.
 
-For distributed data ingestion, just increase the batch size to use the extra computing power effectively, 
+For distributed data ingestion, just increase the batch size to use the extra computing power effectively,
 
 > [!TIP]
 > Use the largest batch size that fits the GPU memory
@@ -255,7 +255,7 @@ checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
 I define the checkpoint directory to store the checkpoints and the names of the files. Checkpoints are important to restore the weights if the model training stops due to some issues.
 
 2. `tf.keras.callbacks.TensorBoard` writes a log for TensorBoard, which allows you to visualize the graphs.
-   
+
 3. `tf.keras.callbacks.LearningRateScheduler` schedules the learning rate to change after, for example, every epoch/batch.
 
 ```python
@@ -456,7 +456,7 @@ spec:
                 claimName: strategy-volume
 ```
 
-You can pass `saved_model_dir` and `checkpoint_dir` to the container. 
+You can pass `saved_model_dir` and `checkpoint_dir` to the container.
 
 The `volumes` field specifies the persistent volume claim and `volumeMounts` field specifies what folder to mount the files. The `CleanPodPolicy` in the TFJob spec controls the deletion of pods when a job terminates. The `restartPolicy` determines whether pods will be restarted when they exit.
 
@@ -482,7 +482,7 @@ kubectl logs training-worker-0
 #TODO
 
 
-While training the model, I'm storing it in the `/saved_model_versions/1/` path. 
+While training the model, I'm storing it in the `/saved_model_versions/1/` path.
 
 > [!NOTE]
 > We can edit/update the code and resubmit the job. Just delete the running job, rebuild the docker image, import it, and resubmit the job. These are the steps to remember every
@@ -632,7 +632,7 @@ spec:
 
 ## Inference
 
-I've implemented distributed training and model selection components. Next I'm creating a model serving component. This component takes the trained model from `trained_model/saved_model_versions/3`. 
+I've implemented distributed training and model selection components. Next I'm creating a model serving component. This component takes the trained model from `trained_model/saved_model_versions/3`.
 
 The inference service should be very highly performant and robust. I'm not considering cost at this moment.
 

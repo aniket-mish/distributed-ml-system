@@ -50,7 +50,7 @@ spec:
     resource:
       action: create
       setOwnerReference: true
-      successCondition: status.replicaStatuses.Worker.succeeded = 4 
+      successCondition: status.replicaStatuses.Worker.succeeded = 4
       failureCondition: status.replicaStatuses.Worker.failed > 0
       manifest: |
         apiVersion: kubeflow.org/v1

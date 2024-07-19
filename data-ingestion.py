@@ -1,5 +1,6 @@
 import tensorflow_datasets as tfds
 
+
 def get_dataset():
     """
     Get the data
@@ -14,7 +15,7 @@ def get_dataset():
 
     # Use Fashion-MNIST: https://www.tensorflow.org/datasets/catalog/fashion_mnist
     datasets, info = tfds.load(name="fashion_mnist", with_info=True, as_supervised=True)
-    
+
     train = datasets["train"]
 
     return train.map(scale).cache().shuffle(BUFFER_SIZE)

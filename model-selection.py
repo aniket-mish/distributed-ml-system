@@ -4,6 +4,7 @@ import tensorflow_datasets as tfds
 import shutil
 import os
 
+
 # Scale the data from range [0, 255] to range [0, 1]
 def scale(image, label):
     image = tf.cast(image, tf.float32)

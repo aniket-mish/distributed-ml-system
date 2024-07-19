@@ -17,35 +17,41 @@ def decay(epoch):
     else:
         return 1e-5
 
+
 def build_and_compile_cnn_model():
     """
     Neural net
     """
     print("Training a simple neural net")
 
-    model = tf.keras.Sequential([
-      tf.keras.layers.Flatten(input_shape=(28, 28)),
-      tf.keras.layers.Dense(128, activation='relu'),
-      tf.keras.layers.Dense(10)
-    ])
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.Dense(10),
+        ]
+    )
 
-    model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+    model.compile(
+        optimizer="adam",
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
 
     return model
+
 
 def main(args):
     """
     Distributed training
     """
     strategy = tf.distribute.MultiWorkerMirroredStrategy()
-  
+
     BATCH_SIZE_PER_REPLICA = 64
     BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
 
     with strategy.scope():
-      
+
         dataset = mnist_dataset().batch(BATCH_SIZE).repeat()
 
         options = tf.data.Options()
@@ -87,7 +93,7 @@ def main(args):
     model.fit(dataset, epochs=5, steps_per_epoch=70, callbacks=callbacks)
 
     def _is_chief():
-        return TASK_INDEX == 0 # Returns true if master
+        return TASK_INDEX == 0  # Returns true if master
 
     # Check if master/worker node
     if _is_chief():
@@ -96,15 +102,18 @@ def main(args):
         # Save to a path that is unique across workers
         model_path = args.saved_model_dir + "/worker_tmp_" + str(TASK_INDEX)
 
-    # Save model 
+    # Save model
     model.save(model_path)
-    tf.saved_model.save(model, model_path) # Returns a object that has functions required for inference
+    tf.saved_model.save(
+        model, model_path
+    )  # Returns a object that has functions required for inference
+
 
 if __name__ == "__main__":
     """
     Entrypoint
     """
-  
+
     tf_config = json.loads(os.environ.get("TF_CONFIG") or "{}")
     TASK_INDEX = tf_config["task"]["index"]
 
@@ -123,5 +132,5 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", type=str, required=True, help="model type")
 
     parsed_args = parser.parse_args()
-  
+
     main(parsed_args)
