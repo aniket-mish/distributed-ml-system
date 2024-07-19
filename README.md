@@ -927,3 +927,33 @@ Next, run the workflow.
 ```bash
 kubectl create -f workflow.yaml
 ```
+
+## Logger
+
+Logging is an essential component of the machine learning system. It helps debug issues, analyze performance, troubleshoot errors, gather insights, and implement a feedback loop. Fortunately, KServe makes it easy to create a service called message-dumper. It logs the request and the response. It has a unique identifier for the request and the response.
+
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: message-dumper
+spec:
+  template:
+    spec:
+      containers:
+      - image: gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/event_display
+```
+
+```bash
+kubectl create -f message-dumper.yaml
+```
+
+Next, we include the logger which points to the message dumper url in the InferenceService predictor.
+
+```yaml
+logger:
+  mode: all
+  url: http://message-dumper.default/
+```
+
+You can read about the inference logger [here](https://kserve.github.io/website/0.8/modelserving/logger/logger/#create-an-inferenceservice-with-logger).
