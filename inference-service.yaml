@@ -1,0 +1,16 @@
+apiVersion: "serving.kserve.io/v1beta1"
+kind: InferenceService
+metadata:
+  name: tf-mnist
+  annotations:
+    autoscaling.knative.dev/target: "1"
+spec:
+  predictor:
+    logger:
+      mode: all
+      url: http://message-dumper.default/
+    model:
+      modelFormat:
+        name: tensorflow
+      image: "emacski/tensorflow-serving:2.6.0"
+      storageUri: "pvc://strategy-volume/saved_model_versions"

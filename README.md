@@ -624,3 +624,111 @@ nohup Tensorflow_model_server \
 
 _Nohup, short for no hang-up is a command in Linux systems that keeps processes running even after exiting the shell or terminal._
 
+
+### Distributed model inference
+
+The method mentioned above works great if we're only experimenting locally. There are more efficient ways for distributed model serving.
+
+TensorFlow models contain a signature definition that defines the signature of a computation supported in a TensorFlow graph. SignatureDefs aims to provide generic support to identify the inputs and outputs of a function. We can modify this input layer with a preprocessing function so that clients can use base64 encoded images, which is a standard way of sending images through RESTFUL APIs. To do that, we’ll save a model with new serving signatures. The new signatures use Python functions to handle preprocessing the image from a JPEG to a Tensor. [Refer](https://cloud.google.com/blog/topics/developers-practitioners/add-preprocessing-functions-tensorflow-models-and-deploy-vertex-ai)
+
+```python
+def _preprocess(bytes_inputs):
+    decoded = tf.io.decode_jpeg(bytes_inputs, channels=1)
+    resized = tf.image.resize(decoded, size=(28, 28))
+    return tf.cast(resized, dtype=tf.uint8)
+
+def _get_serve_image_fn(model):
+    @tf.function(input_signature=[tf.TensorSpec([None], dtype=tf.string, name='image_bytes')])
+    def serve_image_fn(bytes_inputs):
+        decoded_images = tf.map_fn(_preprocess, bytes_inputs, dtype=tf.uint8)
+        return model(decoded_images)
+    return serve_image_fn
+
+signatures = {
+    "serving_default": _get_serve_image_fn(model).get_concrete_function(
+        tf.TensorSpec(shape=[None], dtype=tf.string, name='image_bytes')
+    )
+}
+
+tf.saved_model.save(multi_worker_model, model_path, signatures=signatures)
+```
+
+Now we have updated the training script, we should rebuild the image and re-train the model.
+
+Next, we will use KServe for inference service. [KServe](https://www.kubeflow.org/docs/external-add-ons/kserve/kserve/) enables serverless inferencing on Kubernetes and provides performant, high-abstraction interfaces for common machine learning (ML) frameworks like TensorFlow, PyTorch, etc. [Refer](https://kserve.github.io/website/0.11/modelserving/v1beta1/tensorflow/).
+
+We create an [InferenceService](https://kserve.github.io/website/0.11/get_started/first_isvc/#run-your-first-inferenceservice) yaml, which specifies the framework tensorflow and storageUri that is pointed to a saved Tensorflow model.
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: InferenceService
+metadata:
+  name: tf-mnist
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: tensorflow
+      storageUri: "pvc://strategy-volume/saved_model_versions"
+```
+
+Install KServe.
+
+```bash
+curl -s "https://raw.githubusercontent.com/kserve/kserve/release-0.11/hack/quick_install.sh" | bash
+```
+
+Next, apply the inference-service.yaml to create the InferenceService. By default, it exposes an HTTP/REST endpoint.
+
+```bash
+kubectl apply -f inference-service.yaml
+```
+
+Wait for the InferenceService to be in a ready state.
+
+```bash
+kubectl get isvc tf-mnist
+```
+
+Next, we run the prediction. But first, we need to determine and set the INGRESS_HOST and INGRESS_PORT. An ingress gateway is like an API gateway that load-balances requests. To test it locally we have to do `Port Forward`.
+
+```bash
+INGRESS_GATEWAY_SERVICE=$(kubectl get svc --namespace istio-system --selector="app=istio-ingressgateway" --output jsonpath='{.items[0].metadata.name}')
+kubectl port-forward --namespace istio-system svc/${INGRESS_GATEWAY_SERVICE} 8080:80
+```
+
+Then do the following in a different terminal window.
+
+```bash
+export INGRESS_HOST=localhost
+export INGRESS_PORT=8080
+```
+
+We can send a sample request to our inference service. We can curl.
+
+```bash
+MODEL_NAME=tf-mnist
+INPUT_PATH=@./mnist-input.json
+SERVICE_HOSTNAME=$(kubectl get inferenceservice $MODEL_NAME -n kubeflow -o jsonpath='{.status.url}' | cut -d "/" -f 3)
+curl -v -H "Host: ${SERVICE_HOSTNAME}" http://${INGRESS_HOST}:${INGRESS_PORT}/v1/models/$MODEL_NAME:predict -d $INPUT_PATH
+```
+
+or we use the requests library.
+
+```python
+input_path = "mnist-input.json"
+
+with open(input_path) as json_file:
+    data = json.load(json_file)
+
+response = requests.post(
+    url="http://localhost:8080/v1/models/tf-mnist:predict",
+    data=json.dumps(data),
+    headers={"Host": "tf-mnist.kubeflow.example.com"},
+)
+print(response.text)
+```
+
+#TODO
+
+Our inference service is working as expected.
