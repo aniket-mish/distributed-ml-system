@@ -957,3 +957,31 @@ logger:
 ```
 
 You can read about the inference logger [here](https://kserve.github.io/website/0.8/modelserving/logger/logger/#create-an-inferenceservice-with-logger).
+
+
+## Monitoring
+
+!WIP!
+
+
+## Summary
+
+1. A distributed machine learning system is designed to train machine learning models on large datasets that cannot be processed on a single machine. There is a need to distribute the computation or training process to train complex models with millions or rather billions of parameters.
+2. Kubernetes is a popular choice for building such complex distributed systems. We can build scalable and highly available systems using K8s.
+3. Tensorflow provides a number of strategies for distributed training. We have used `MultiWorkerMirroredStrategy` here.
+4. We have used KServe for building an Inference Service which can be autoscaled based on the traffic.
+5. Argo workflows are helpful in building CICD pipelines on Kubernetes.
+
+
+## Next Steps
+
+- Monitoring the metrics with Prometheus and Grafana See [Monitoring](#Monitoring)
+
+
+## References
+
+[1] [Distributed Machine Learning Patterns by Yuan Tang](https://www.manning.com/books/distributed-machine-learning-patterns?utm_source=terrytangyuan&utm_medium=affiliate&utm_campaign=book_tang_distributed_6_10_21&a_aid=terrytangyuan&a_bid=9b134929)
+
+[2] [Multi-worker training with Keras](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras)
+
+[3] [Distributed training with Keras](https://www.tensorflow.org/tutorials/distribute/keras)
