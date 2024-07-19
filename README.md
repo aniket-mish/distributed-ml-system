@@ -329,7 +329,7 @@ Let's create a `Dockerfile`
 ```dockerfile
 FROM python:3.9
 RUN pip install Tensorflow Tensorflow_datasets
-COPY multi-worker-distributed-training.py /
+COPY distributed-training.py /
 ```
 
 #TODO
@@ -825,7 +825,7 @@ The first step is the data ingestion. We have added a `memoize` spec to cache th
       key: "data-ingestion-cache"
     maxAge: "1h"
   container:
-    image: kubeflow/multi-worker-strategy:v0.1
+    image: kubeflow/strategy:v0.1
     imagePullPolicy: IfNotPresent
     command: ["python", "/data-ingestion.py"]
 ```
@@ -859,7 +859,7 @@ Next, we create a step to run distributed training with the CNN model. To create
     apiVersion: kubeflow.org/v1
     kind: TFJob
     metadata:
-      generateName: multi-worker-training-
+      generateName: training-
     spec:
       runPolicy:
         cleanPodPolicy: None
@@ -871,9 +871,9 @@ Next, we create a step to run distributed training with the CNN model. To create
             spec:
               containers:
                 - name: tensorflow
-                  image: kubeflow/multi-worker-strategy:v0.1
+                  image: kubeflow/strategy:v0.1
                   imagePullPolicy: IfNotPresent
-                  command: ["python", "/multi-worker-distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/1/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
+                  command: ["python", "/distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/1/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
                   volumeMounts:
                     - mountPath: /trained_model
                       name: training
@@ -892,7 +892,7 @@ Next, we add the model selection step. It is similar to `model-selection.yaml` w
 - name: model-selection-step
   serviceAccountName: argo
   container:
-    image: kubeflow/multi-worker-strategy:v0.1
+    image: kubeflow/strategy:v0.1
     imagePullPolicy: IfNotPresent
     command: ["python", "/model-selection.py"]
     volumeMounts:
