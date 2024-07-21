@@ -147,7 +147,7 @@ There are multiple design patterns which can be used to create a ML system. In t
 
 ## Data Ingestion
 
-I'm using the fashion mnist dataset that has 70,000 images(60,000 for training and 10,000 for evaluation). It has 10 different catergories and each image has a low resolution of 28x28 px.
+I'm using the cifar10 dataset that has 60,000 images(50,000 for training and 10,000 for testing). It has 10 different catergories and each is a low resolution color image of 32x32 px.
 
 ![cifar10](assets/cifar10-dataset.png)
 
