@@ -13,7 +13,7 @@ spec:
         spec:
           containers:
             - name: tensorflow
-              image: kubeflow/strategy:v0.1
+              image: kubeflow/distributed-training-strategy:v0.1
               imagePullPolicy: IfNotPresent
               command: ["python", "/distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/1/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
               volumeMounts:

@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: predict
-    image: kubeflow/multi-worker-strategy:v0.1
+    image: kubeflow/distributed-training-strategy:v0.1
     command: ["python", "/model-selection.py"]
     volumeMounts:
     - name: model

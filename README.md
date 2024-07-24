@@ -372,7 +372,7 @@ COPY distributed-training.py /
 Next, build the docker image
 
 ```bash
-docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
+docker build -f Dockerfile -t kubeflow/distributed-training-strategy:v0.1 .
 ```
 
 ![docker-build](assets/docker-build.png)
@@ -381,7 +381,7 @@ docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
 I need to import the image to the k3d cluster as it cannot access the image registry.
 
 ```bash
-k3d image import docker.io/kubeflow/ditributed-training-strategy:v0.1 --cluster dist-ml
+k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster dist-ml
 ```
 
 ![k3d-image-import](assets/k3d-image-import.png)
@@ -463,7 +463,7 @@ The `volumes` field specifies the persistent volume claim and `volumeMounts` fie
 Submit the TFJob to our cluster and start our distributed model training.
 
 ```bash
-kubectl create -f tfjob.yaml
+kubectl apply -f tfjob.yaml
 ```
 
 I can see two pods running our distributed training as we've specified `2` workers.
@@ -488,9 +488,9 @@ While training the model, I'm storing it in the `/saved_model_versions/1/` path.
 
 ```bash
 kubectl delete tfjob --all
-docker build -f Dockerfile -t kubeflow/ditributed-training-strategy:v0.1 .
-k3d image import kubeflow/ditributed-training-strategy:v0.1 --cluster fmnist
-kubectl create -f tfjob.yaml
+docker build -f Dockerfile -t kubeflow/distributed-training-strategy:v0.1 .
+k3d image import kubeflow/distributed-training-strategy:v0.1 --cluster dist-ml
+kubectl apply -f tfjob.yaml
 ```
 
 Voila! model training's done.
@@ -498,7 +498,7 @@ Voila! model training's done.
 Next, evaluate the model's performance.
 
 ```bash
-kubectl create -f predict-service.yaml
+kubectl apply -f predict-service.yaml
 ```
 
 Finally, I have a trained model stored in the file path `trained_model/saved_model_versions/2/`.
@@ -861,7 +861,7 @@ The first step is the data ingestion. We have added a `memoize` spec to cache th
       key: "data-ingestion-cache"
     maxAge: "1h"
   container:
-    image: kubeflow/strategy:v0.1
+    image: kubeflow/distributed-training-strategy:v0.1
     imagePullPolicy: IfNotPresent
     command: ["python", "/data-ingestion.py"]
 ```
@@ -907,7 +907,7 @@ Next, we create a step to run distributed training with the CNN model. To create
             spec:
               containers:
                 - name: tensorflow
-                  image: kubeflow/strategy:v0.1
+                  image: kubeflow/distributed-training-strategy:v0.1
                   imagePullPolicy: IfNotPresent
                   command: ["python", "/distributed-training.py", "--saved_model_dir", "/trained_model/saved_model_versions/1/", "--checkpoint_dir", "/trained_model/checkpoint", "--model_type", "cnn"]
                   volumeMounts:
@@ -928,7 +928,7 @@ Next, we add the model selection step. It is similar to `model-selection.yaml` w
 - name: model-selection-step
   serviceAccountName: argo
   container:
-    image: kubeflow/strategy:v0.1
+    image: kubeflow/distributed-training-strategy:v0.1
     imagePullPolicy: IfNotPresent
     command: ["python", "/model-selection.py"]
     volumeMounts:

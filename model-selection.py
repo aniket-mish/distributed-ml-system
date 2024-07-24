@@ -7,6 +7,9 @@ import os
 
 # Scale the data from range [0, 255] to range [0, 1]
 def scale(image, label):
+    """
+    Scale image
+    """
     image = tf.cast(image, tf.float32)
     image /= 255
     return image, label

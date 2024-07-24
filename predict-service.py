@@ -7,6 +7,9 @@ model = keras.models.load_model("trained_model/saved_model_versions/1")
 
 # Scaling mnist data from (0, 255] to (0., 1.]
 def scale(image, label):
+    """
+    Scale image
+    """
     image = tf.cast(image, tf.float32)
     image /= 255
     return image, label
