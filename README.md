@@ -794,7 +794,7 @@ Next, I install [Hey](https://github.com/rakyll/hey), a tiny program that sends 
 ```bash
 # https://github.com/rakyll/hey
 brew install hey
-kubectl create -f inference-service.yaml
+kubectl apply -f inference-service.yaml
 
 hey -z 30s -c 5 -m POST -host ${SERVICE_HOSTNAME} -D mnist-input.json "http://${INGRESS_HOST}:${INGRESS_PORT}/v1/models/tf-mnist:predict"
 ```
@@ -961,7 +961,7 @@ The last step of the workflow is the model serving.
 Next, run the workflow.
 
 ```bash
-kubectl create -f workflow.yaml
+kubectl apply -f workflow.yaml
 ```
 
 ## Logger
@@ -981,7 +981,7 @@ spec:
 ```
 
 ```bash
-kubectl create -f message-dumper.yaml
+kubectl apply -f message-dumper.yaml
 ```
 
 Next, we include the logger which points to the message dumper url in the InferenceService predictor.
