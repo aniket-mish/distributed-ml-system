@@ -4,7 +4,7 @@
 
 Building a distributed machine learning system in this modern era of deep learning is necessary. Every company that uses machine learning wants to serve their customers at scale. Models are becoming huge and the datasets required to train these models are also increasing. This trend will continue in future as well because of the [scaling laws](https://arxiv.org/abs/2203.15556). On top of that GPUs are very expensive. So keeping these GPUs idle can cost you a lot. Using multi-GPU training and optimizing inference can save costs and improve user experience.
 
-I'm working on this project to get a deeper understanding of distributed machine learning systems. I'm using Kubernetes, PyTorch and Argo. Every one of them is open sourced.
+I'm working on this project to get a deeper understanding of distributed machine learning systems. I'm using Kubernetes, Kubeflow, Tensorflow and Argo.
 
 
 - [Distributed Machine Learning System](#distributed-machine-learning-system)

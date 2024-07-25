@@ -1,5 +1,5 @@
-import Tensorflow_datasets as tfds
-import Tensorflow as tf
+import tensorflow_datasets as tfds
+import tensorflow as tf
 
 
 def get_dataset():

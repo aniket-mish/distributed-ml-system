@@ -26,7 +26,7 @@ def build_and_compile_cnn_model():
 
     model = tf.keras.Sequential(
         [
-            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Flatten(input_shape=(3, 32, 32)),
             tf.keras.layers.Dense(128, activation="relu"),
             tf.keras.layers.Dense(10),
         ]
@@ -52,7 +52,7 @@ def main(args):
 
     with strategy.scope():
 
-        dataset = mnist_dataset().batch(BATCH_SIZE).repeat()
+        dataset = get_dataset().batch(BATCH_SIZE).repeat()
 
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = (
@@ -77,7 +77,7 @@ def main(args):
         def on_epoch_end(self, epoch, logs=None):
             print(
                 "\nLearning rate for epoch {} is {}".format(
-                    epoch + 1, multi_worker_model.optimizer.lr.numpy()
+                    epoch + 1, model.optimizer.lr.numpy()
                 )
             )
 
