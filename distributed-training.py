@@ -17,7 +17,10 @@ def decay(epoch):
 
 
 def build_and_compile_cnn_model():
-    print("Training CNN model")
+    """
+    Build and compile a simple cnn model
+    """
+    print("Training a simple cnn model")
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Input(shape=(28, 28, 1), name="image_bytes"))
     model.add(tf.keras.layers.Conv2D(32, (3, 3), activation="relu"))
@@ -36,7 +39,10 @@ def build_and_compile_cnn_model():
 
 
 def build_and_compile_cnn_model_with_batch_norm():
-    print("Training CNN model with batch normalization")
+    """
+    Build and compile a cnn model with batch normalization
+    """
+    print("Training a cnn model with batch normalization")
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Input(shape=(28, 28, 1), name="image_bytes"))
     model.add(tf.keras.layers.Conv2D(32, (3, 3), activation="relu"))
@@ -62,7 +68,10 @@ def build_and_compile_cnn_model_with_batch_norm():
 
 
 def build_and_compile_cnn_model_with_dropout():
-    print("Training CNN model with dropout")
+    """
+    Build and compile a cnn model with dropout
+    """
+    print("Training a cnn model with dropout")
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Input(shape=(28, 28, 1), name="image_bytes"))
     model.add(tf.keras.layers.Conv2D(32, (3, 3), activation="relu"))

@@ -60,7 +60,7 @@ I'm using a Macbook. These system are generally built on cloud. I'm using conda 
 [1] Let's install pytorch for data processing, model building and evaluation workflows.
 
 ```bash
-conda install pytorch::pytorch torchvision -c pytorch
+conda install tensorflow tensorflow_datasets
 ```
 
 ![torch](<assets/torch-version.png>)
@@ -83,7 +83,7 @@ wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bas
 Create a single-node cluster. You can create a multi-server cluster as well by specifying `--servers 3`.
 
 ```bash
-k3d cluster create dist-ml
+k3d cluster create dist-ml --image rancher/k3s:v1.25.3-k3s1
 ```
 
 You can see the cluster info using command
@@ -228,17 +228,23 @@ A simple neural net with `Adam` optimizer and `SparseCategoricalCrossentropy` lo
 
 ```python
 def build_and_compile_cnn_model():
-    print("Training a simple neural net")
+    """
+    Build and compile a simple cnn model
+    """
+    print("Training a simple cnn model")
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Input(shape=(28, 28, 1), name="image_bytes"))
+    model.add(tf.keras.layers.Conv2D(32, (3, 3), activation="relu"))
+    model.add(tf.keras.layers.MaxPooling2D((2, 2)))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(64, activation="relu"))
+    model.add(tf.keras.layers.Dense(10, activation="softmax"))
 
-    model = tf.keras.Sequential([
-      tf.keras.layers.Flatten(input_shape=(28, 28)),
-      tf.keras.layers.Dense(128, activation='relu'),
-      tf.keras.layers.Dense(10)
-    ])
+    model.summary()
 
-    model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+    model.compile(
+        optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+    )
 
     return model
 ```
