@@ -967,7 +967,7 @@ The last step of the workflow is the model serving.
 Next, run the workflow.
 
 ```bash
-kubectl apply -f workflow.yaml
+kubectl create -f workflow.yaml
 ```
 
 ## Logger
@@ -1001,11 +1001,6 @@ logger:
 You can read about the inference logger [here](https://kserve.github.io/website/0.8/modelserving/logger/logger/#create-an-inferenceservice-with-logger).
 
 
-## Monitoring
-
-!WIP!
-
-
 ## Summary
 
 1. A distributed machine learning system is designed to train machine learning models on large datasets that cannot be processed on a single machine. There is a need to distribute the computation or training process to train complex models with millions or rather billions of parameters.
@@ -1017,13 +1012,13 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 ## Next Steps
 
-- ~Change dataset used to CIFAR10~
-- Update tf code to pytorch
-- Add mlflow to track experiments
-- Monitoring the metrics with Prometheus and Grafana See [Monitoring](#Monitoring)
-- Deploy the app to EKS
-- Add CI using github actions
-- Add GitOps for CD
+- change dataset to cifar10
+- update tf code to pytorch
+- add mlflow to track experiments
+- monitoring the metrics with prometheus and grafana
+- deploy the app to aws eks
+- add ci using github actions
+- add gitops for cd
 
 
 ## References
