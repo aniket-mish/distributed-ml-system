@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: predict
-    image: distml/distributed-ml:v0.1
+    image: kubeflow/distributed-training-strategy:v0.1
     command: ['sleep', 'infinity']
     volumeMounts:
     - name: model

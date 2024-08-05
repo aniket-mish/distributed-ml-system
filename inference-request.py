@@ -4,6 +4,7 @@ import json
 input_path = "fmnist-input.json"
 
 with open(input_path) as json_file:
+    print(f"Loading data from {input_path}")
     data = json.load(json_file)
 
 response = requests.post(

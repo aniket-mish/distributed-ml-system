@@ -3,6 +3,9 @@ import tensorflow as tf
 
 
 def get_dataset():
+    """
+    Download the dataset
+    """
     BUFFER_SIZE = 10000
 
     # Scale the MNIST data from [0, 255] range to [0, 1] range
@@ -11,7 +14,7 @@ def get_dataset():
         image /= 255
         return image, label
 
-    # Use Fashion-MNIST: https://www.tensorflow.org/datasets/catalog/fashion_mnist
+    # Download the fashion mnist dataset
     datasets, info = tfds.load(name="fashion_mnist", with_info=True, as_supervised=True)
     train = datasets["train"]
 

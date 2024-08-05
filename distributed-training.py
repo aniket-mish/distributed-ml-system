@@ -5,9 +5,6 @@ import tensorflow as tf
 
 from data_ingestion import get_dataset
 
-# Suppress TensorFlow warnings
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
 
 # Learning rate decay
 def decay(epoch):
