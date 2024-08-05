@@ -7,3 +7,4 @@ RUN pip install tensorflow tensorflow-datasets
 COPY data_ingestion.py /
 COPY distributed-training.py /
 COPY model-selection.py /
+COPY predict-service.py /

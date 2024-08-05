@@ -3,6 +3,7 @@ import json
 import os
 
 import tensorflow as tf
+from tensorflow.keras import layers
 from data_ingestion import get_dataset
 
 
@@ -24,18 +25,16 @@ def build_and_compile_cnn_model():
     """
     print("Training a simple neural net")
 
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.Flatten(input_shape=(3, 32, 32)),
-            tf.keras.layers.Dense(128, activation="relu"),
-            tf.keras.layers.Dense(10),
-        ]
-    )
+    model = tf.keras.Sequential()
+    model.add(layers.Input(shape=(28, 28, 1), name="image_bytes"))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(64, activation="relu"))
+    model.add(layers.Dense(10, activation="softmax"))
+
+    model.summary()
 
     model.compile(
-        optimizer="adam",
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=["accuracy"],
+        optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
     )
 
     return model
@@ -71,7 +70,7 @@ def main(args):
     checkpoint_dir = args.checkpoint_dir
 
     # Name of the checkpoint files
-    checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
+    checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}.weights.h5")
 
     class PrintLR(tf.keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs=None):

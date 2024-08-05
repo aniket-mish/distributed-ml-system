@@ -13,6 +13,7 @@ def get_dataset():
         image /= 255
         return image, label
 
-    datasets, info = tfds.load(name="cifar10", with_info=True, as_supervised=True)
+    datasets, info = tfds.load(name="fashion_mnist", with_info=True, as_supervised=True)
     train = datasets["train"]
+
     return train.map(scale).cache().shuffle(BUFFER_SIZE)
