@@ -1012,7 +1012,7 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 ## Next Steps
 
-- change dataset to cifar10
+- ~add a new dataset cifar10~
 - update tf code to pytorch
 - add mlflow to track experiments
 - monitoring the metrics with prometheus and grafana
@@ -1023,6 +1023,6 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 ## References
 
-[1] [Distributed Machine Learning Patterns by Yuan Tang](https://www.manning.com/books/distributed-machine-learning-patterns?utm_source=terrytangyuan&utm_medium=affiliate&utm_campaign=book_tang_distributed_6_10_21&a_aid=terrytangyuan&a_bid=9b134929)
+[1] [Distributed Machine Learning Patterns](https://www.manning.com/books/distributed-machine-learning-patterns?utm_source=terrytangyuan&utm_medium=affiliate&utm_campaign=book_tang_distributed_6_10_21&a_aid=terrytangyuan&a_bid=9b134929)
 
 [2] [Machine Learning with PyTorch and Scikit-Learn](https://sebastianraschka.com/blog/2022/ml-pytorch-book.html)
