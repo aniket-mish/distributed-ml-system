@@ -1025,6 +1025,4 @@ You can read about the inference logger [here](https://kserve.github.io/website/
 
 [1] [Distributed Machine Learning Patterns by Yuan Tang](https://www.manning.com/books/distributed-machine-learning-patterns?utm_source=terrytangyuan&utm_medium=affiliate&utm_campaign=book_tang_distributed_6_10_21&a_aid=terrytangyuan&a_bid=9b134929)
 
-[2] [Multi-worker training with Keras](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras)
-
-[3] [Distributed training with Keras](https://www.tensorflow.org/tutorials/distribute/keras)
+[2] [Machine Learning with PyTorch and Scikit-Learn](https://sebastianraschka.com/blog/2022/ml-pytorch-book.html)
